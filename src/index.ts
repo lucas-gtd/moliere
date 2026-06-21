@@ -4,6 +4,9 @@ import { loadConfig } from "./config";
 import { streamChat, type Message } from "./llm/openrouter";
 import { executeTool } from "./tools";
 
+const MAX_TOOL_ROUNDS = 12;
+const MAX_REPEATED_TOOL_BATCHES = 2;
+
 const program = new Command();
 const config = loadConfig();
 
@@ -52,8 +55,19 @@ program.action(async () => {
     historiqueMessages.push({ role: "user", content: userInput.toString() });
 
     let agentAATermine = false;
+    let toolRounds = 0;
+    let lastToolSignature = "";
+    let repeatedToolSignatureCount = 0;
 
     while (!agentAATermine) {
+      if (toolRounds >= MAX_TOOL_ROUNDS) {
+        console.warn(
+          `Molière s'arrête après ${MAX_TOOL_ROUNDS} tours d'outils pour éviter une boucle coûteuse. Reformule ou demande une tâche plus ciblée.`,
+        );
+        agentAATermine = true;
+        continue;
+      }
+
       const s = spinner();
       s.start("Molière réfléchit...");
 
@@ -71,46 +85,70 @@ program.action(async () => {
           },
         );
 
-        if (reponseAssistant.content) {
-          if (aCommenceAEcrire) console.log("\n");
-          else s.stop();
-
-          historiqueMessages.push(reponseAssistant);
-          agentAATermine = true;
-        } else if (
+        if (
           reponseAssistant.tool_calls &&
           reponseAssistant.tool_calls.length > 0
         ) {
-          if (aCommenceAEcrire) {
-            console.log("\n");
+          toolRounds += 1;
+
+          const toolSignature = JSON.stringify(
+            reponseAssistant.tool_calls.map((toolCall) => ({
+              name: toolCall.function.name,
+              arguments: toolCall.function.arguments,
+            })),
+          );
+
+          if (toolSignature === lastToolSignature) {
+            repeatedToolSignatureCount += 1;
           } else {
+            lastToolSignature = toolSignature;
+            repeatedToolSignatureCount = 1;
+          }
+
+          if (repeatedToolSignatureCount > MAX_REPEATED_TOOL_BATCHES) {
+            if (!aCommenceAEcrire) s.stop();
+            console.warn(
+              "Molière s'arrête: le modèle répète exactement les mêmes appels d'outils.",
+            );
+            agentAATermine = true;
+            continue;
+          }
+
+          if (reponseAssistant.content && aCommenceAEcrire) {
+            console.log("\n");
+          } else if (!aCommenceAEcrire) {
             s.stop("Molière a décidé d'agir.");
           }
 
           historiqueMessages.push(reponseAssistant);
 
-          const toolCall = reponseAssistant.tool_calls[0];
+          const toolResults = await Promise.all(
+            reponseAssistant.tool_calls.map(async (toolCall) => {
+              const toolName = toolCall.function.name;
+              const toolArgs = toolCall.function.arguments;
 
-          if (!toolCall) {
-            agentAATermine = true;
-            continue;
-          }
+              console.log(
+                `\x1b[36m> Exécution de l'outil : ${toolName} (${toolArgs})\x1b[0m`,
+              );
 
-          const toolName = toolCall.function.name;
-          const toolArgs = toolCall.function.arguments;
+              const resultatOutil = await executeTool(toolName, toolArgs);
 
-          console.log(
-            `\x1b[36m> Exécution de l'outil : ${toolName} (${toolArgs})\x1b[0m`,
+              return {
+                role: "tool",
+                content: resultatOutil,
+                name: toolName,
+                tool_call_id: toolCall.id,
+              } satisfies Message;
+            }),
           );
 
-          const resultatOutil = await executeTool(toolName, toolArgs);
+          historiqueMessages.push(...toolResults);
+        } else if (reponseAssistant.content) {
+          if (aCommenceAEcrire) console.log("\n");
+          else s.stop();
 
-          historiqueMessages.push({
-            role: "tool",
-            content: resultatOutil,
-            name: toolName,
-            tool_call_id: toolCall.id,
-          });
+          historiqueMessages.push(reponseAssistant);
+          agentAATermine = true;
         } else {
           s.stop();
           agentAATermine = true;
