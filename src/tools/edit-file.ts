@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
+import { writeFileAtomically } from "./atomic-write";
 
 export const editFile = async (
   filePath: string,
   oldText: string,
   newText: string,
+  displayPath = filePath,
 ) => {
   if (!oldText) {
     throw new Error('"oldText" ne peut pas être vide.');
@@ -28,7 +30,7 @@ export const editFile = async (
     content.slice(0, firstIndex) +
     newText +
     content.slice(firstIndex + oldText.length);
-  await fs.writeFile(filePath, updatedContent, "utf-8");
+  await writeFileAtomically(filePath, updatedContent);
 
-  return `Fichier modifié : ${filePath} (${oldText.length} caractères remplacés par ${newText.length}).`;
+  return `Fichier modifié : ${displayPath} (${oldText.length} caractères remplacés par ${newText.length}).`;
 };

@@ -2,10 +2,55 @@ import { Command } from "commander";
 import { intro, outro, text, spinner, isCancel } from "@clack/prompts";
 import { loadConfig } from "./config";
 import { streamChat, type Message } from "./llm/openrouter";
-import { executeTool } from "./tools";
+import { executeTool, isMutatingTool } from "./tools";
 
 const MAX_TOOL_ROUNDS = 12;
 const MAX_REPEATED_TOOL_BATCHES = 2;
+type ToolCall = NonNullable<Message["tool_calls"]>[number];
+
+const executeSingleToolCall = async (toolCall: ToolCall): Promise<Message> => {
+  const toolName = toolCall.function.name;
+
+  console.log(`\x1b[36m> Exécution de l'outil : ${toolName}\x1b[0m`);
+  const resultatOutil = await executeTool(toolName, toolCall.function.arguments);
+
+  return {
+    role: "tool",
+    content: resultatOutil,
+    name: toolName,
+    tool_call_id: toolCall.id,
+  };
+};
+
+const executeToolCallsSafely = async (
+  toolCalls: ToolCall[],
+): Promise<Message[]> => {
+  const results: Message[] = [];
+  let index = 0;
+
+  while (index < toolCalls.length) {
+    const toolCall = toolCalls[index];
+    if (!toolCall) break;
+
+    if (isMutatingTool(toolCall.function.name)) {
+      results.push(await executeSingleToolCall(toolCall));
+      index += 1;
+      continue;
+    }
+
+    const readOnlyBatch: ToolCall[] = [];
+    while (index < toolCalls.length) {
+      const nextToolCall = toolCalls[index];
+      if (!nextToolCall || isMutatingTool(nextToolCall.function.name)) break;
+      readOnlyBatch.push(nextToolCall);
+      index += 1;
+    }
+
+    results.push(...(await Promise.all(readOnlyBatch.map(executeSingleToolCall))));
+  }
+
+  return results;
+};
 
 const program = new Command();
 const config = loadConfig();
@@ -32,7 +77,7 @@ program.action(async () => {
     {
       role: "system",
       content:
-        "Tu es Molière, un agent de codage expert, hautement performant, autonome et pragmatique. Tu t'exprimes en français de manière claire et concise. Tu peux lire, chercher, créer et modifier des fichiers. Pour modifier un fichier existant, préfère editFile avec un petit bloc exact; réserve writeFile aux nouveaux fichiers.",
+        "Tu es Molière, un agent de codage expert, hautement performant, autonome et pragmatique. Tu t'exprimes en français de manière claire et concise. Tu peux explorer le projet avec tree, listDirectory, findFiles et searchInFiles; lire les fichiers avec readFile; créer avec writeFile; modifier avec editFile; inspecter Git avec gitStatus, gitDiff et gitLog; lancer des tests/builds avec runCommand. Préfère les chemins relatifs au projet, limite les sorties volumineuses, utilise editFile avec un bloc exact et unique, réserve writeFile aux nouveaux fichiers, et n'exécute jamais de commande destructive.",
     },
   ];
 
@@ -121,25 +166,8 @@ program.action(async () => {
           }
 
           historiqueMessages.push(reponseAssistant);
-
-          const toolResults = await Promise.all(
-            reponseAssistant.tool_calls.map(async (toolCall) => {
-              const toolName = toolCall.function.name;
-              const toolArgs = toolCall.function.arguments;
-
-              console.log(
-                `\x1b[36m> Exécution de l'outil : ${toolName} (${toolArgs})\x1b[0m`,
-              );
-
-              const resultatOutil = await executeTool(toolName, toolArgs);
-
-              return {
-                role: "tool",
-                content: resultatOutil,
-                name: toolName,
-                tool_call_id: toolCall.id,
-              } satisfies Message;
-            }),
+          const toolResults = await executeToolCallsSafely(
+            reponseAssistant.tool_calls,
           );
 
           historiqueMessages.push(...toolResults);
