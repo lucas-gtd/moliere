@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { renderTricolor, renderHeader, renderSignature, DIAMOND, STAR, SECTION } from "../src/branding/art";
 
-describe("branding tricolore", () => {
+describe("branding", () => {
   test("renderHeader compact ne contient pas de fleurs", () => {
     const header = renderHeader("compact");
     expect(header).not.toContain("\u269C");
   });
 
-  test("renderStartupBanner mentionne tricolore", () => {
-    const banner = renderHeader("full") + "\ntricolore";
-    expect(banner).toContain("tricolore");
+  test("renderStartupBanner mentionne agent de codage CLI", () => {
+    const banner = renderHeader("full") + "\nagent de codage CLI";
+    expect(banner).toContain("agent de codage CLI");
   });
 
   test("ornements DIAMOND, STAR, SECTION exportés", () => {

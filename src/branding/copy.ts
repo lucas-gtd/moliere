@@ -11,9 +11,9 @@ export const GREETINGS = {
 
 export const COPY = {
   projectName: "Molière",
-  projectSubtitle: "L'agent de codage tricolore",
+  projectSubtitle: "Agent de codage CLI",
   tagline: "Comprendre, modifier, vérifier.",
-  projectSlogan: "Bleu, Blanc, Rouge — Made in France.",
+  projectSlogan: "Simple, rapide, autonome.",
   toolCategory: {
     read: "Lecture",
     write: "Écriture",

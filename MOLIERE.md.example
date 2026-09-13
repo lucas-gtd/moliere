@@ -1,6 +1,6 @@
 # MOLIERE.md — Contexte de projet pour Molière
 
-Ce fichier est lu par Molière au début de chaque session pour comprendre votre projet.
+Ce fichier est lu par Molière au début de chaque session pour comprendre votre projet. Il est l'équivalent d'un `CLAUDE.md` et fournit au modèle des conventions et des invariants propres au projet.
 
 ## Description du projet
 
@@ -22,7 +22,6 @@ Ce fichier est lu par Molière au début de chaque session pour comprendre votre
 ## Commandes utiles
 
 - Tests : `bun test`
-- Lint : `bun run lint`
 - Build : `bun run build`
 
 ## Fichiers importants

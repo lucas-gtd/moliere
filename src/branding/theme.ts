@@ -22,7 +22,7 @@ export interface Theme {
   palette: Palette;
 }
 
-const TRICOLORE_PALETTE: Palette = {
+const DEFAULT_PALETTE: Palette = {
   primary: "#0055A4",
   secondary: "#3B7DD8",
   accent: "#C9A227",
@@ -71,9 +71,9 @@ const PARCHEMIN_PALETTE: Palette = {
 };
 
 export const THEMES: Record<ThemeName, Theme> = {
-  default: { name: "default", label: "Tricolore", palette: TRICOLORE_PALETTE },
-  soir: { name: "soir", label: "Soir tricolore", palette: SOIR_PALETTE },
-  parchemin: { name: "parchemin", label: "Parchemin tricolore", palette: PARCHEMIN_PALETTE },
+  default: { name: "default", label: "Classique", palette: DEFAULT_PALETTE },
+  soir: { name: "soir", label: "Soir", palette: SOIR_PALETTE },
+  parchemin: { name: "parchemin", label: "Parchemin", palette: PARCHEMIN_PALETTE },
 };
 
 export const THEME_NAMES = Object.keys(THEMES) as ThemeName[];

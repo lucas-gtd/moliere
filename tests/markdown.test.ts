@@ -38,6 +38,7 @@ describe("art", () => {
   test("renderStartupBanner contient le nom", () => {
     const banner = renderStartupBanner("MiniMax-M3", "0.2");
     expect(banner).toContain("M  O  L  I");
-    expect(banner).toContain("tricolore");
+    expect(banner).toContain("agent de codage CLI");
+    expect(banner).toContain("Session active");
   });
 });

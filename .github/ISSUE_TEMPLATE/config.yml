@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/lucas-gtd/moliere/discussions
+    about: Pour les questions générales et l'aide à l'utilisation de Molière.
+  - name: Sécurité
+    url: https://github.com/lucas-gtd/moliere/security/advisories/new
+    about: Pour signaler une faille de sécurité en privé, suivez la procédure de SECURITY.md.

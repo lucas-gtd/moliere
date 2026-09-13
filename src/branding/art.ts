@@ -31,7 +31,7 @@ export const MOLIERE_QUOTES = [
 const HEADER_LINES = [
   "\u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
   "\u2502   M  O  L  I  \u00C8  R  E   \u2502                                         ",
-  "\u2502       l'agent de codage tricolore                       \u2502",
+  "\u2502       agent de codage CLI                                    \u2502",
   "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2568",
 ];
 
@@ -95,7 +95,7 @@ export const renderStartupBanner = (model: string, version: string): string => {
   return [
     renderHeader("full"),
     "",
-    `   Édition ${version}  ·  Modèle ${model}  ·  Atelier numérique tricolore`,
+    `   Édition ${version}  ·  Modèle ${model}  ·  Session active`,
     "",
   ].join("\n");
 };
