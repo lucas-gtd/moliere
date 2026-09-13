@@ -9,6 +9,9 @@ const IGNORED_DIRECTORIES = new Set([
   "coverage",
   ".next",
   ".turbo",
+  ".moliere",
+  ".cache",
+  ".bun",
 ]);
 
 export interface WalkFilesResult {
@@ -17,7 +20,10 @@ export interface WalkFilesResult {
 }
 
 export const shouldSkipEntry = (name: string, includeHidden: boolean) => {
-  if (!includeHidden && name.startsWith(".")) return true;
+  if (!includeHidden && name.startsWith(".")) {
+    if (name === ".gitignore" || name === ".env.example") return false;
+    return true;
+  }
   return IGNORED_DIRECTORIES.has(name);
 };
 

@@ -16,7 +16,7 @@ export const resolveProjectPath = (
 ) => {
   const requestedPath = inputPath.trim() || ".";
   if (requestedPath.includes("\0")) {
-    throw new ToolInputError("Le chemin contient un caractere nul interdit.");
+    throw new ToolInputError("Le chemin contient un caractère nul interdit.");
   }
 
   const projectRoot = path.resolve(context.projectRoot);
@@ -26,7 +26,7 @@ export const resolveProjectPath = (
 
   if (!isInsideOrSame(projectRoot, resolvedPath)) {
     throw new ToolInputError(
-      `Acces refuse hors du projet: ${requestedPath}.`,
+      `Accès refusé hors du projet : ${requestedPath}.`,
     );
   }
 
@@ -44,7 +44,7 @@ export const resolveExistingProjectPath = async (
   ]);
 
   if (!isInsideOrSame(realRoot, realTarget)) {
-    throw new ToolInputError(`Acces refuse via lien symbolique: ${inputPath}.`);
+    throw new ToolInputError(`Accès refusé via lien symbolique : ${inputPath}.`);
   }
 
   return resolvedPath;
@@ -63,7 +63,7 @@ export const resolveWritableProjectPath = async (
       const stats = await fs.stat(nearestExistingParent);
       if (!stats.isDirectory()) {
         throw new ToolInputError(
-          `Le parent n'est pas un dossier: ${nearestExistingParent}.`,
+          `Le parent n'est pas un dossier : ${nearestExistingParent}.`,
         );
       }
       break;
@@ -80,7 +80,7 @@ export const resolveWritableProjectPath = async (
 
   const realParent = await fs.realpath(nearestExistingParent);
   if (!isInsideOrSame(realRoot, realParent)) {
-    throw new ToolInputError(`Acces refuse via parent symbolique: ${inputPath}.`);
+    throw new ToolInputError(`Accès refusé via parent symbolique : ${inputPath}.`);
   }
 
   return resolvedPath;

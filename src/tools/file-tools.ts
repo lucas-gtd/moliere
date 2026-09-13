@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
-import { editFile } from "./edit-file";
+import { editFile, editFileMulti } from "./edit-file";
 import {
   resolveExistingProjectPath,
   resolveProjectPath,
@@ -11,12 +11,12 @@ import {
 } from "./path-safety";
 import type { ToolDefinition, ToolExecutionContext } from "./types";
 import {
-  countLines,
   DEFAULT_MAX_OUTPUT_CHARS,
   hasBinaryMarker,
   optionalBoolean,
   optionalInteger,
   optionalString,
+  optionalStringArray,
   requireString,
   ToolInputError,
   truncateText,
@@ -124,7 +124,7 @@ const matchesPattern = (pattern: string, relativePath: string) => {
 const readFileTool: ToolDefinition = {
   name: "readFile",
   description:
-    "Lit un fichier du projet. Utilise startLine/endLine ou maxBytes pour limiter les gros fichiers.",
+    "Lit un fichier du projet. Utilisez startLine/endLine ou maxBytes pour limiter les gros fichiers.",
   access: "read",
   parameters: {
     type: "object",
@@ -136,15 +136,15 @@ const readFileTool: ToolDefinition = {
       },
       startLine: {
         type: "integer",
-        description: "Optionnel. Premiere ligne a lire (1-indexee)",
+        description: "Optionnel. Première ligne à lire (1-indexée)",
       },
       endLine: {
         type: "integer",
-        description: "Optionnel. Derniere ligne a lire (incluse)",
+        description: "Optionnel. Dernière ligne à lire (incluse)",
       },
       maxBytes: {
         type: "integer",
-        description: "Optionnel. Maximum de caracteres lus ou retournes",
+        description: "Optionnel. Maximum de caractères lus ou retournés",
       },
     },
     required: ["path"],
@@ -154,7 +154,7 @@ const readFileTool: ToolDefinition = {
     const filePath = await resolveExistingProjectPath(context, requestedPath);
     const stats = await fs.stat(filePath);
     if (!stats.isFile()) {
-      throw new ToolInputError(`Ce chemin n'est pas un fichier: ${requestedPath}.`);
+      throw new ToolInputError(`Ce chemin n'est pas un fichier : ${requestedPath}.`);
     }
 
     const maxBytes =
@@ -177,15 +177,15 @@ const readFileTool: ToolDefinition = {
       const effectiveStartLine = startLine ?? 1;
       const effectiveEndLine = endLine ?? effectiveStartLine + 499;
       if (effectiveEndLine < effectiveStartLine) {
-        throw new ToolInputError("endLine doit etre superieur ou egal a startLine.");
+        throw new ToolInputError("endLine doit être supérieur ou égal à startLine.");
       }
       if (effectiveEndLine - effectiveStartLine > 999) {
-        throw new ToolInputError("La lecture par plage est limitee a 1000 lignes.");
+        throw new ToolInputError("La lecture par plage est limitée à 1000 lignes.");
       }
 
       const sample = await readFirstBytes(filePath, Math.min(maxBytes, 4096));
       if (hasBinaryMarker(sample)) {
-        throw new ToolInputError("Lecture refusee: le fichier semble binaire.");
+        throw new ToolInputError("Lecture refusée : le fichier semble binaire.");
       }
 
       const range = await readLineRange(
@@ -200,9 +200,9 @@ const readFileTool: ToolDefinition = {
 
       const notices: string[] = [];
       if (range.truncatedByBytes) {
-        notices.push(`[tronque: limite maxBytes=${maxBytes} atteinte]`);
+        notices.push(`[tronqué : limite maxBytes=${maxBytes} atteinte]`);
       } else if (range.stoppedAfterEndLine) {
-        notices.push(`[plage lue: lignes ${effectiveStartLine}-${effectiveEndLine}]`);
+        notices.push(`[plage lue : lignes ${effectiveStartLine}-${effectiveEndLine}]`);
       }
       return truncateText([range.text, ...notices].filter(Boolean).join("\n"), maxBytes);
     }
@@ -213,11 +213,11 @@ const readFileTool: ToolDefinition = {
       : await fs.readFile(filePath, "utf-8");
 
     if (hasBinaryMarker(content)) {
-      throw new ToolInputError("Lecture refusee: le fichier semble binaire.");
+      throw new ToolInputError("Lecture refusée : le fichier semble binaire.");
     }
 
     const notice = truncatedBySize
-      ? `\n\n[tronque: fichier de ${stats.size} octets, seuls les ${maxBytes} premiers octets sont affiches]`
+      ? `\n\n[tronqué : fichier de ${stats.size} octets, seuls les ${maxBytes} premiers octets sont affichés]`
       : "";
     return truncateText(`${content}${notice}`, maxBytes + notice.length);
   },
@@ -225,7 +225,7 @@ const readFileTool: ToolDefinition = {
 
 const writeFileTool: ToolDefinition = {
   name: "writeFile",
-  description: "Cree un nouveau fichier dans le projet; echoue si le fichier existe deja.",
+  description: "Crée un nouveau fichier dans le projet ; échoue si le fichier existe déjà.",
   access: "write",
   parameters: {
     type: "object",
@@ -242,7 +242,8 @@ const writeFileTool: ToolDefinition = {
     const filePath = await resolveWritableProjectPath(context, requestedPath);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, content, { encoding: "utf-8", flag: "wx" });
-    return `Fichier cree: ${toDisplayPath(context, filePath)} (${content.length} caracteres).`;
+    context.onFileChanged?.(filePath);
+    return `Fichier créé : ${toDisplayPath(context, filePath)} (${content.length} caractères).`;
   },
 };
 
@@ -254,8 +255,8 @@ const editFileTool: ToolDefinition = {
     type: "object",
     additionalProperties: false,
     properties: {
-      path: { type: "string", description: "Chemin du fichier a modifier" },
-      oldText: { type: "string", description: "Bloc exact a remplacer" },
+      path: { type: "string", description: "Chemin du fichier à modifier" },
+      oldText: { type: "string", description: "Bloc exact à remplacer" },
       newText: { type: "string", description: "Bloc de remplacement" },
     },
     required: ["path", "oldText", "newText"],
@@ -265,15 +266,73 @@ const editFileTool: ToolDefinition = {
     const filePath = await resolveExistingProjectPath(context, requestedPath);
     const stats = await fs.stat(filePath);
     if (!stats.isFile()) {
-      throw new ToolInputError(`Ce chemin n'est pas un fichier: ${requestedPath}.`);
+      throw new ToolInputError(`Ce chemin n'est pas un fichier : ${requestedPath}.`);
     }
 
-    return editFile(
+    const result = await editFile(
       filePath,
       requireString(args, "oldText"),
       requireString(args, "newText"),
       toDisplayPath(context, filePath),
     );
+    context.onFileChanged?.(filePath);
+    return result;
+  },
+};
+
+const multiEditFileTool: ToolDefinition = {
+  name: "multiEditFile",
+  description: "Applique plusieurs remplacements exacts sur un même fichier, dans l'ordre.",
+  access: "write",
+  parameters: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      path: { type: "string", description: "Chemin du fichier à modifier" },
+      edits: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            oldText: { type: "string" },
+            newText: { type: "string" },
+          },
+          required: ["oldText", "newText"],
+        },
+        description: "Liste de {oldText, newText} appliqués en séquence",
+      },
+    },
+    required: ["path", "edits"],
+  },
+  execute: async (args, context) => {
+    const requestedPath = requireString(args, "path");
+    const editsRaw = args.edits;
+    if (!Array.isArray(editsRaw)) {
+      throw new ToolInputError('"edits" doit être un tableau.');
+    }
+    const edits = editsRaw.map((entry, index) => {
+      if (
+        !entry ||
+        typeof entry !== "object" ||
+        typeof (entry as Record<string, unknown>).oldText !== "string" ||
+        typeof (entry as Record<string, unknown>).newText !== "string"
+      ) {
+        throw new ToolInputError(`Edit #${index + 1} invalide.`);
+      }
+      return {
+        oldText: (entry as { oldText: string }).oldText,
+        newText: (entry as { newText: string }).newText,
+      };
+    });
+    const filePath = await resolveExistingProjectPath(context, requestedPath);
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile()) {
+      throw new ToolInputError(`Ce chemin n'est pas un fichier : ${requestedPath}.`);
+    }
+    const result = await editFileMulti(filePath, edits, toDisplayPath(context, filePath));
+    context.onFileChanged?.(filePath);
+    return result;
   },
 };
 
@@ -287,15 +346,15 @@ const listDirectoryTool: ToolDefinition = {
     properties: {
       path: {
         type: "string",
-        description: "Dossier a lister. Defaut: racine du projet",
+        description: "Dossier à lister. Défaut : racine du projet",
       },
       includeHidden: {
         type: "boolean",
-        description: "Inclure les fichiers et dossiers caches",
+        description: "Inclure les fichiers et dossiers cachés",
       },
       maxEntries: {
         type: "integer",
-        description: "Nombre maximum d'entrees retournees",
+        description: "Nombre maximum d'entrées retournées",
       },
     },
   },
@@ -304,7 +363,7 @@ const listDirectoryTool: ToolDefinition = {
     const directoryPath = await resolveExistingProjectPath(context, requestedPath);
     const stats = await fs.stat(directoryPath);
     if (!stats.isDirectory()) {
-      throw new ToolInputError(`Ce chemin n'est pas un dossier: ${requestedPath}.`);
+      throw new ToolInputError(`Ce chemin n'est pas un dossier : ${requestedPath}.`);
     }
 
     const includeHidden = optionalBoolean(args, "includeHidden", false);
@@ -327,7 +386,7 @@ const listDirectoryTool: ToolDefinition = {
     const output = visibleEntries.map(renderEntry).join("\n");
     const notice =
       entries.length > visibleEntries.length
-        ? `\n\n[tronque: ${entries.length - visibleEntries.length} entrees omises]`
+        ? `\n\n[tronqué : ${entries.length - visibleEntries.length} entrées omises]`
         : "";
     return output ? `${output}${notice}` : "Dossier vide.";
   },
@@ -341,10 +400,10 @@ const treeTool: ToolDefinition = {
     type: "object",
     additionalProperties: false,
     properties: {
-      path: { type: "string", description: "Dossier racine. Defaut: ." },
+      path: { type: "string", description: "Dossier racine. Défaut : ." },
       maxDepth: { type: "integer", description: "Profondeur maximum (0-5)" },
-      maxEntries: { type: "integer", description: "Nombre maximum d'entrees" },
-      includeHidden: { type: "boolean", description: "Inclure les fichiers caches" },
+      maxEntries: { type: "integer", description: "Nombre maximum d'entrées" },
+      includeHidden: { type: "boolean", description: "Inclure les fichiers cachés" },
     },
   },
   execute: async (args, context) => {
@@ -352,7 +411,7 @@ const treeTool: ToolDefinition = {
     const rootPath = await resolveExistingProjectPath(context, requestedPath);
     const stats = await fs.stat(rootPath);
     if (!stats.isDirectory()) {
-      throw new ToolInputError(`Ce chemin n'est pas un dossier: ${requestedPath}.`);
+      throw new ToolInputError(`Ce chemin n'est pas un dossier : ${requestedPath}.`);
     }
 
     const maxDepth =
@@ -403,7 +462,7 @@ const treeTool: ToolDefinition = {
     };
 
     await visit(rootPath, 0);
-    if (truncated) lines.push(`[tronque: limite maxEntries=${maxEntries} atteinte]`);
+    if (truncated) lines.push(`[tronqué : limite maxEntries=${maxEntries} atteinte]`);
     return lines.join("\n");
   },
 };
@@ -411,7 +470,7 @@ const treeTool: ToolDefinition = {
 const findFilesTool: ToolDefinition = {
   name: "findFiles",
   description:
-    "Trouve des fichiers par motif simple (*, **, ?) dans le projet, en ignorant les dossiers lourds par defaut.",
+    "Trouve des fichiers par motif simple (*, **, ?) dans le projet, en ignorant les dossiers lourds par défaut.",
   access: "read",
   parameters: {
     type: "object",
@@ -419,32 +478,32 @@ const findFilesTool: ToolDefinition = {
     properties: {
       pattern: {
         type: "string",
-        description: "Motif de nom ou chemin, ex: *.ts, src/**/*.ts",
+        description: "Motif de nom ou chemin, ex : *.ts, src/**/*.ts",
       },
       targetDirectory: {
         type: "string",
-        description: "Sous-dossier de recherche. Defaut: racine du projet",
+        description: "Sous-dossier de recherche. Défaut : racine du projet",
       },
       includeHidden: {
         type: "boolean",
-        description: "Inclure les fichiers et dossiers caches",
+        description: "Inclure les fichiers et dossiers cachés",
       },
       maxResults: {
         type: "integer",
-        description: "Nombre maximum de fichiers retournes",
+        description: "Nombre maximum de fichiers retournés",
       },
     },
     required: ["pattern"],
   },
   execute: async (args, context) => {
     const pattern = requireString(args, "pattern");
-    if (!pattern.trim()) throw new ToolInputError('"pattern" ne peut pas etre vide.');
+    if (!pattern.trim()) throw new ToolInputError('"pattern" ne peut pas être vide.');
 
     const targetDirectory = optionalString(args, "targetDirectory") ?? ".";
     const rootPath = await resolveExistingProjectPath(context, targetDirectory);
     const stats = await fs.stat(rootPath);
     if (!stats.isDirectory()) {
-      throw new ToolInputError(`Ce chemin n'est pas un dossier: ${targetDirectory}.`);
+      throw new ToolInputError(`Ce chemin n'est pas un dossier : ${targetDirectory}.`);
     }
 
     const includeHidden = optionalBoolean(args, "includeHidden", false);
@@ -464,10 +523,10 @@ const findFilesTool: ToolDefinition = {
       .filter((relativePath) => matchesPattern(pattern, relativePath))
       .slice(0, maxResults);
 
-    if (matches.length === 0) return `Aucun fichier trouve pour "${pattern}".`;
+    if (matches.length === 0) return `Aucun fichier trouvé pour "${pattern}".`;
     const notice =
       truncated || matches.length >= maxResults
-        ? `\n\n[tronque: precise le motif ou targetDirectory pour reduire les resultats]`
+        ? `\n\n[tronqué : précisez le motif ou targetDirectory pour réduire les résultats]`
         : "";
     return truncateText(matches.join("\n") + notice, DEFAULT_MAX_OUTPUT_CHARS);
   },
@@ -477,6 +536,7 @@ export const fileTools: ToolDefinition[] = [
   readFileTool,
   writeFileTool,
   editFileTool,
+  multiEditFileTool,
   listDirectoryTool,
   treeTool,
   findFilesTool,

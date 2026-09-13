@@ -32,3 +32,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Sessions persistees (jamais committees - contient l'historique)
+.moliere/sessions/
+.moliere/config.json
+.moliere/permissions.json
+.moliere/hooks.json
+
+# Hooks / permissions exemples a la racine (oui), generated user files (non)
+

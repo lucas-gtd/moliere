@@ -1,0 +1,30 @@
+{
+  "_comment": "Exemple de configuration des hooks Molière. Les hooks sont des commandes shell exécutées avant ou après les outils.",
+  "PreToolUse": [
+    {
+      "_comment": "Bloque les éditions de fichiers TypeScript si lint échoue (exit code != 0).",
+      "matcher": "editFile|writeFile|multiEditFile",
+      "command": "bunx prettier --check",
+      "timeoutMs": 30000
+    }
+  ],
+  "PostToolUse": [
+    {
+      "_comment": "Affiche une notification après chaque runCommand.",
+      "matcher": "runCommand",
+      "command": "echo \"[hook] runCommand terminé\""
+    }
+  ],
+  "Stop": [
+    {
+      "_comment": "Sonne une cloche quand l'agent s'arrête.",
+      "command": "echo \"\\a\""
+    }
+  ],
+  "SessionStart": [
+    {
+      "_comment": "Charge l'environnement du projet.",
+      "command": "test -f .env && set -a && . ./.env && set +a && echo 'env chargé'"
+    }
+  ]
+}

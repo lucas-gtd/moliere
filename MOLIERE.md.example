@@ -1,0 +1,44 @@
+# MOLIERE.md — Contexte de projet pour Molière
+
+Ce fichier est lu par Molière au début de chaque session pour comprendre votre projet.
+
+## Description du projet
+
+[Une description courte du projet]
+
+## Stack technique
+
+- Langages : TypeScript, Bun
+- Frameworks : Ink (TUI), Marked (Markdown)
+- Outils : Git, Bun test
+
+## Conventions de code
+
+- TypeScript strict
+- Imports relatifs au projet
+- Commentaires en français
+- Pas de magic strings, privilégier les enums
+
+## Commandes utiles
+
+- Tests : `bun test`
+- Lint : `bun run lint`
+- Build : `bun run build`
+
+## Fichiers importants
+
+- `src/index.tsx` : point d'entrée
+- `src/agent/loop.ts` : boucle agent principale
+- `src/tools/` : catalogue d'outils
+
+## Ce que Molière doit savoir
+
+- Toujours utiliser Bun plutôt que npm
+- Préférer le mode de lecture seul avant d'écrire
+- Demander confirmation avant toute modification destructrice
+
+## Ce que Molière doit éviter
+
+- Ne jamais supprimer `node_modules`
+- Ne jamais modifier le `.env`
+- Ne jamais commit sans demande explicite

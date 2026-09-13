@@ -27,7 +27,7 @@ export const parseJsonObject = (text: string): Record<string, unknown> => {
   }
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new ToolInputError("Les arguments doivent etre un objet JSON.");
+    throw new ToolInputError("Les arguments doivent être un objet JSON.");
   }
 
   return parsed as Record<string, unknown>;
@@ -39,10 +39,10 @@ export const requireString = (
 ) => {
   const value = args[name];
   if (typeof value !== "string") {
-    throw new ToolInputError(`"${name}" doit etre une chaine de caracteres.`);
+    throw new ToolInputError(`"${name}" doit être une chaîne de caractères.`);
   }
   if (value.includes("\0")) {
-    throw new ToolInputError(`"${name}" contient un caractere nul interdit.`);
+    throw new ToolInputError(`"${name}" contient un caractère nul interdit.`);
   }
   return value;
 };
@@ -54,10 +54,10 @@ export const optionalString = (
   const value = args[name];
   if (value === undefined || value === null) return undefined;
   if (typeof value !== "string") {
-    throw new ToolInputError(`"${name}" doit etre une chaine de caracteres.`);
+    throw new ToolInputError(`"${name}" doit être une chaîne de caractères.`);
   }
   if (value.includes("\0")) {
-    throw new ToolInputError(`"${name}" contient un caractere nul interdit.`);
+    throw new ToolInputError(`"${name}" contient un caractère nul interdit.`);
   }
   return value;
 };
@@ -70,7 +70,7 @@ export const optionalBoolean = (
   const value = args[name];
   if (value === undefined || value === null) return defaultValue;
   if (typeof value !== "boolean") {
-    throw new ToolInputError(`"${name}" doit etre un booleen.`);
+    throw new ToolInputError(`"${name}" doit être un booléen.`);
   }
   return value;
 };
@@ -83,15 +83,15 @@ export const optionalInteger = (
   const value = args[name];
   if (value === undefined || value === null) return options.defaultValue;
   if (!Number.isInteger(value)) {
-    throw new ToolInputError(`"${name}" doit etre un entier.`);
+    throw new ToolInputError(`"${name}" doit être un entier.`);
   }
 
   const numberValue = value as number;
   if (options.min !== undefined && numberValue < options.min) {
-    throw new ToolInputError(`"${name}" doit etre >= ${options.min}.`);
+    throw new ToolInputError(`"${name}" doit être >= ${options.min}.`);
   }
   if (options.max !== undefined && numberValue > options.max) {
-    throw new ToolInputError(`"${name}" doit etre <= ${options.max}.`);
+    throw new ToolInputError(`"${name}" doit être <= ${options.max}.`);
   }
   return numberValue;
 };
@@ -104,13 +104,13 @@ export const optionalStringArray = (
   const value = args[name];
   if (value === undefined || value === null) return defaultValue;
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
-    throw new ToolInputError(`"${name}" doit etre un tableau de chaines.`);
+    throw new ToolInputError(`"${name}" doit être un tableau de chaînes.`);
   }
 
   const stringValues = value as string[];
   for (const entry of stringValues) {
     if (entry.includes("\0")) {
-      throw new ToolInputError(`"${name}" contient un caractere nul interdit.`);
+      throw new ToolInputError(`"${name}" contient un caractère nul interdit.`);
     }
   }
   return stringValues;
@@ -124,7 +124,7 @@ export const truncateText = (
   if (text.length <= cappedMax) return text;
 
   const omitted = text.length - cappedMax;
-  return `${text.slice(0, cappedMax)}\n\n... [sortie tronquee: ${omitted} caracteres omis]`;
+  return `${text.slice(0, cappedMax)}\n\n... [sortie tronquée : ${omitted} caractères omis]`;
 };
 
 export const countLines = (text: string) => {
@@ -133,3 +133,9 @@ export const countLines = (text: string) => {
 };
 
 export const hasBinaryMarker = (text: string) => text.includes("\0");
+
+export const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Kio`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} Mio`;
+};

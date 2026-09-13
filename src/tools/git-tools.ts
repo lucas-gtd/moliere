@@ -14,7 +14,7 @@ import {
 
 const gitStatusTool: ToolDefinition = {
   name: "gitStatus",
-  description: "Affiche l'etat git court du projet.",
+  description: "Affiche l'état git court du projet.",
   access: "read",
   parameters: {
     type: "object",
@@ -22,7 +22,7 @@ const gitStatusTool: ToolDefinition = {
     properties: {
       maxOutputChars: {
         type: "integer",
-        description: "Nombre maximum de caracteres retournes",
+        description: "Nombre maximum de caractères retournés",
       },
     },
   },
@@ -46,7 +46,7 @@ const gitStatusTool: ToolDefinition = {
 
 const gitDiffTool: ToolDefinition = {
   name: "gitDiff",
-  description: "Affiche un diff git limite, staged ou non, optionnellement pour un chemin.",
+  description: "Affiche un diff git limité, staged ou non, optionnellement pour un chemin.",
   access: "read",
   parameters: {
     type: "object",
@@ -57,7 +57,7 @@ const gitDiffTool: ToolDefinition = {
       contextLines: { type: "integer", description: "Lignes de contexte du diff" },
       maxOutputChars: {
         type: "integer",
-        description: "Nombre maximum de caracteres retournes",
+        description: "Nombre maximum de caractères retournés",
       },
     },
   },
@@ -98,7 +98,7 @@ const gitDiffTool: ToolDefinition = {
 
 const gitLogTool: ToolDefinition = {
   name: "gitLog",
-  description: "Affiche les commits recents du projet.",
+  description: "Affiche les commits récents du projet.",
   access: "read",
   parameters: {
     type: "object",
@@ -108,7 +108,7 @@ const gitLogTool: ToolDefinition = {
       path: { type: "string", description: "Chemin cible optionnel dans le projet" },
       maxOutputChars: {
         type: "integer",
-        description: "Nombre maximum de caracteres retournes",
+        description: "Nombre maximum de caractères retournés",
       },
     },
   },

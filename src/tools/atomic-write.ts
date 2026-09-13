@@ -24,7 +24,7 @@ export const writeFileAtomically = async (filePath: string, content: string) => 
       await fs.rm(temporaryPath, { force: true });
     } catch (cleanupError) {
       throw new Error(
-        `Ecriture echouee: ${getErrorMessage(error)}. Nettoyage echoue: ${getErrorMessage(cleanupError)}.`,
+        `Écriture échouée : ${getErrorMessage(error)}. Nettoyage échoué : ${getErrorMessage(cleanupError)}.`,
       );
     }
 

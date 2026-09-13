@@ -58,10 +58,10 @@ const fallbackSearch = async (
     }
   }
 
-  if (matches.length === 0) return `Aucun resultat trouve pour "${query}".`;
+  if (matches.length === 0) return `Aucun résultat trouvé pour "${query}".`;
   const notice =
     truncated || matches.length >= options.maxResults
-      ? `\n\n[tronque: precise targetDirectory ou maxResults pour affiner]`
+      ? `\n\n[tronqué : précisez targetDirectory ou maxResults pour affiner]`
       : "";
   return truncateText(matches.join("\n") + notice, DEFAULT_MAX_OUTPUT_CHARS);
 };
@@ -69,31 +69,31 @@ const fallbackSearch = async (
 const searchInFilesTool: ToolDefinition = {
   name: "searchInFiles",
   description:
-    "Recherche un texte dans les fichiers du projet avec git grep securise et resultats limites.",
+    "Recherche un texte dans les fichiers du projet avec git grep sécurisé et résultats limités.",
   access: "read",
   parameters: {
     type: "object",
     additionalProperties: false,
     properties: {
-      query: { type: "string", description: "Texte exact a rechercher" },
+      query: { type: "string", description: "Texte exact à rechercher" },
       targetDirectory: {
         type: "string",
-        description: "Sous-dossier cible. Defaut: racine du projet",
+        description: "Sous-dossier cible. Défaut : racine du projet",
       },
       caseSensitive: {
         type: "boolean",
-        description: "Recherche sensible a la casse. Defaut: true",
+        description: "Recherche sensible à la casse. Défaut : true",
       },
       maxResults: {
         type: "integer",
-        description: "Nombre maximum de lignes de resultat",
+        description: "Nombre maximum de lignes de résultat",
       },
     },
     required: ["query"],
   },
   execute: async (args, context) => {
     const query = requireString(args, "query");
-    if (!query.trim()) throw new ToolInputError('"query" ne peut pas etre vide.');
+    if (!query.trim()) throw new ToolInputError('"query" ne peut pas être vide.');
 
     const targetDirectory = optionalString(args, "targetDirectory") ?? ".";
     const rootPath = await resolveExistingProjectPath(context, targetDirectory);
@@ -129,15 +129,15 @@ const searchInFilesTool: ToolDefinition = {
       const limitedLines = lines.slice(0, maxResults);
       const notice =
         lines.length > limitedLines.length
-          ? `\n\n[tronque: ${lines.length - limitedLines.length} lignes omises]`
+          ? `\n\n[tronqué : ${lines.length - limitedLines.length} lignes omises]`
           : "";
       return limitedLines.length > 0
         ? truncateText(limitedLines.join("\n") + notice, DEFAULT_MAX_OUTPUT_CHARS)
-        : `Aucun resultat trouve pour "${query}".`;
+        : `Aucun résultat trouvé pour "${query}".`;
     }
 
     if (result.exitCode === 1 && !result.stderr.trim()) {
-      return `Aucun resultat trouve pour "${query}".`;
+      return `Aucun résultat trouvé pour "${query}".`;
     }
 
     const gitUnavailable =

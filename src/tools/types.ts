@@ -5,10 +5,17 @@ export type JsonObjectSchema = {
   additionalProperties?: boolean;
 };
 
-export type ToolAccess = "read" | "write" | "command";
+export type ToolAccess = "read" | "write" | "command" | "web" | "ask";
 
 export interface ToolExecutionContext {
   projectRoot: string;
+  permissions?: {
+    mode: "default" | "accept-edits" | "plan" | "yolo";
+    allowed: Set<string>;
+    denied: Set<string>;
+  };
+  signal?: AbortSignal;
+  onFileChanged?: (path: string) => void;
 }
 
 export interface ToolDefinition {
@@ -22,7 +29,7 @@ export interface ToolDefinition {
   ) => Promise<string>;
 }
 
-export type OpenRouterTool = {
+export type ChatCompletionTool = {
   type: "function";
   function: {
     name: string;
@@ -30,3 +37,11 @@ export type OpenRouterTool = {
     parameters: JsonObjectSchema;
   };
 };
+
+export interface ToolCallResult {
+  toolCallId: string;
+  toolName: string;
+  ok: boolean;
+  output: string;
+  error?: string;
+}

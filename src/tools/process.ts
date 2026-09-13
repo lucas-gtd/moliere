@@ -35,6 +35,8 @@ export const runProcess = async (
     cwd: string;
     timeoutMs?: number;
     maxOutputChars?: number;
+    signal?: AbortSignal;
+    env?: Record<string, string>;
   },
 ): Promise<ProcessResult> => {
   const maxOutputChars = options.maxOutputChars ?? DEFAULT_MAX_OUTPUT_CHARS;
@@ -44,7 +46,8 @@ export const runProcess = async (
       cwd: options.cwd,
       timeout: options.timeoutMs,
       maxBuffer: Math.min(maxOutputChars * 2, 1_000_000),
-      env: { ...process.env, CI: "1", NO_COLOR: "1" },
+      env: { ...process.env, CI: "1", NO_COLOR: "1", ...(options.env ?? {}) },
+      signal: options.signal,
     });
 
     return {
@@ -73,7 +76,7 @@ export const formatProcessResult = (
   maxOutputChars = DEFAULT_MAX_OUTPUT_CHARS,
 ) => {
   const parts = [`${title} (exit ${result.exitCode})`];
-  if (result.timedOut) parts.push("Processus arrete par timeout.");
+  if (result.timedOut) parts.push("Processus arrêté par timeout.");
   if (result.stdout.trim()) parts.push(`stdout:\n${result.stdout.trimEnd()}`);
   if (result.stderr.trim()) parts.push(`stderr:\n${result.stderr.trimEnd()}`);
   return truncateText(parts.join("\n\n"), maxOutputChars);
