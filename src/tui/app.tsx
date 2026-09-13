@@ -3,6 +3,7 @@ import { Box, Text, useApp, useInput, useStdout } from "ink";
 import { Header } from "./components/Header";
 import { Conversation, StreamingPreview, type ToolEntry } from "./components/Conversation";
 import { Input } from "./components/Input";
+import { useScrollState } from "./hooks/useScrollState";
 import { StatusBar } from "./components/StatusBar";
 import { SlashMenu } from "./components/SlashMenu";
 import { PermissionGate } from "./components/PermissionGate";
@@ -19,7 +20,7 @@ import type { TodoItem } from "../tools/todo-tools";
 import type { PermissionDecision } from "../agent/permissions";
 import { runSubAgent } from "../agent/sub-agent";
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 
 const SYSTEM_PROMPT = `Tu es Molière, un agent de codage expert, hautement performant, autonome et pragmatique. Tu t'exprimes en français de manière claire et concise. Tu peux :
 
@@ -105,6 +106,22 @@ export const App: React.FC = () => {
   const stateRef = useRef(state);
   const configRef = useRef(config);
   const columns = stdout?.columns ?? 80;
+
+  // Virtual-list viewport sizing. Header (~2) + StatusBar (~2) + Input (~3) +
+  // safety (~1) = ~8 reserved rows. Streaming preview adds ~4 rows while active.
+  const RESERVED_ROWS = 8;
+  const STREAMING_OVERHEAD = 4;
+  const AVG_LINES_PER_ITEM = 4;
+  const rowsAvailable = Math.max(
+    6,
+    (stdout?.rows ?? 24) - RESERVED_ROWS - (streamingActive ? STREAMING_OVERHEAD : 0),
+  );
+  const viewportItems = Math.max(3, Math.floor(rowsAvailable / AVG_LINES_PER_ITEM));
+  const totalItems =
+    state.messages.length +
+    (state.todos.length > 0 ? 1 : 0) +
+    (hooksOutput.length > 0 ? 1 : 0);
+  const scroll = useScrollState({ totalItems, viewportItems });
 
   useEffect(() => {
     stateRef.current = state;
@@ -428,6 +445,29 @@ export const App: React.FC = () => {
         permissionRequest.resolve({ type: "deny-always", toolName: permissionRequest.toolCall.function.name });
         setPermissionRequest(null);
       }
+      return;
+    }
+
+    // Conversation scroll shortcuts. Active whenever no gate is pending and
+    // there is something to scroll. PgUp/PgDn step by ~one viewport of items;
+    // Home/End jump to the absolute top/bottom (re-engaging auto-follow).
+    if (totalItems > 0 && scroll.maxOffset > 0) {
+      if (key.pageUp) {
+        scroll.scrollUpBy(viewportItems - 1);
+        return;
+      }
+      if (key.pageDown) {
+        scroll.scrollDownBy(viewportItems - 1);
+        return;
+      }
+      if (key.home) {
+        scroll.scrollToTop();
+        return;
+      }
+      if (key.end) {
+        scroll.scrollToBottom();
+        return;
+      }
     }
   });
 
@@ -486,6 +526,10 @@ export const App: React.FC = () => {
           tools={tools}
           todos={state.todos}
           hooksOutput={hooksOutput}
+          scrollOffset={scroll.offset}
+          viewportItems={viewportItems}
+          hasNewBelow={scroll.hasNewBelow}
+          following={scroll.following}
         />
         {streamingActive && <StreamingPreview text={streaming} />}
       </Box>
@@ -560,6 +604,20 @@ const formatArgsPreview = (name: string, args: Record<string, unknown>): string 
   if (name === "readFile" || name === "writeFile" || name === "editFile" || name === "multiEditFile") {
     return typeof args.path === "string" ? args.path : "";
   }
+  if (name === "listDirectory") {
+    const path = typeof args.path === "string" && args.path !== "." ? args.path : ".";
+    const max = typeof args.maxEntries === "number" ? args.maxEntries : null;
+    return max ? `${path} (max ${max})` : path;
+  }
+  if (name === "tree") {
+    const path = typeof args.path === "string" && args.path !== "." ? args.path : ".";
+    const depth = typeof args.maxDepth === "number" ? args.maxDepth : null;
+    return depth ? `${path} (profondeur ${depth})` : path;
+  }
+  if (name === "findFiles") {
+    const pattern = String(args.pattern ?? args.query ?? "");
+    return pattern ? `motif="${pattern}"` : "";
+  }
   if (name === "searchInFiles") {
     return `query="${String(args.query ?? "")}"`;
   }
@@ -577,8 +635,11 @@ const formatArgsPreview = (name: string, args: Record<string, unknown>): string 
     const path = typeof args.path === "string" ? args.path : "";
     return path;
   }
-  const entries = Object.entries(args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ");
-  return entries.slice(0, 80);
+  // Fallback: short, human-friendly key=value summary.
+  const entries = Object.entries(args)
+    .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .join(", ");
+  return entries.length > 80 ? entries.slice(0, 77) + "…" : entries;
 };
 
 void renderStartupBanner;

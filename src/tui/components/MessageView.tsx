@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { renderMarkdown } from "../markdown/render";
+import { stripThinking } from "../format/stripThinking";
 
 export interface MessageProps {
   role: "user" | "assistant" | "system" | "tool";
@@ -17,7 +18,9 @@ export const MessageView: React.FC<MessageProps> = ({ role, content }) => {
   }
 
   if (role === "assistant") {
-    const rendered = renderMarkdown(content || "");
+    const cleaned = stripThinking(content || "");
+    if (!cleaned) return null;
+    const rendered = renderMarkdown(cleaned);
     return (
       <Box flexDirection="column" marginY={1} paddingX={1}>
         <Text color="#E5E7EB">{rendered}</Text>
