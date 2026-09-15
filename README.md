@@ -54,41 +54,42 @@ bun start
 
 Options CLI :
 
-| Option | Effet |
-|---|---|
-| `--model <id>` | Modèle pour cette session |
-| `--theme <nom>` | `default`, `soir` ou `parchemin` |
+| Option                 | Effet                                       |
+| ---------------------- | ------------------------------------------- |
+| `--model <id>`         | Modèle pour cette session                   |
+| `--theme <nom>`        | `default`, `soir` ou `parchemin`            |
 | `--permissions <mode>` | `default`, `accept-edits`, `plan` ou `yolo` |
-| `--plan` | Démarrer en mode plan (lecture seule) |
-| `--resume <id>` | Reprendre une session sauvegardée |
-| `--no-tui` | Mode CLI simple sans TUI |
+| `--plan`               | Démarrer en mode plan (lecture seule)       |
+| `--resume <id>`        | Reprendre une session sauvegardée           |
+| `--no-tui`             | Mode CLI simple sans TUI                    |
 
 ## Commandes slash
 
-| Commande | Rôle |
-|---|---|
-| `/help` (`/aide`) | Affiche les commandes slash |
-| `/clear` | Réinitialise la conversation |
-| `/exit` (`/quit`, `/quitter`) | Quitte Molière |
-| `/status` | État détaillé (modèle, session, fichiers, hooks) |
-| `/cost` | Jetons consommés cette session |
-| `/config` | Configuration (clé masquée, modèles) |
-| `/model <id>` | Change le modèle |
-| `/theme <nom>` | Change le thème visuel |
-| `/permissions <mode>` | Change le mode de permissions |
-| `/plan` / `/unplan` | Active ou désactive le mode plan |
-| `/init` | Crée un fichier `MOLIERE.md` à la racine |
-| `/compact` | Résume l'historique pour libérer du contexte |
-| `/doctor` | Diagnostic de l'environnement |
-| `/sessions` | Liste, reprend ou supprime une session |
-| `/agents` | Liste ou lance un sous-agent (`/agents run <nom> <prompt>`) |
-| `/save` | Sauvegarde immédiate de la session |
+| Commande                      | Rôle                                                        |
+| ----------------------------- | ----------------------------------------------------------- |
+| `/help` (`/aide`)             | Affiche les commandes slash                                 |
+| `/clear`                      | Réinitialise la conversation                                |
+| `/exit` (`/quit`, `/quitter`) | Quitte Molière                                              |
+| `/status`                     | État détaillé (modèle, session, fichiers, hooks)            |
+| `/cost`                       | Jetons consommés cette session                              |
+| `/config`                     | Configuration (clé masquée, modèles)                        |
+| `/model <id>`                 | Change le modèle                                            |
+| `/theme <nom>`                | Change le thème visuel                                      |
+| `/permissions <mode>`         | Change le mode de permissions                               |
+| `/plan` / `/unplan`           | Active ou désactive le mode plan                            |
+| `/init`                       | Crée un fichier `MOLIERE.md` à la racine                    |
+| `/compact`                    | Résume l'historique pour libérer du contexte                |
+| `/doctor`                     | Diagnostic de l'environnement                               |
+| `/sessions`                   | Liste, reprend ou supprime une session                      |
+| `/agents`                     | Liste ou lance un sous-agent (`/agents run <nom> <prompt>`) |
+| `/save`                       | Sauvegarde immédiate de la session                          |
 
 ## Outils
 
 Quatorze outils sont exposés au modèle, organisés par catégorie.
 
 ### Lecture
+
 - `readFile` — Lit un fichier (avec `startLine`/`endLine` pour les gros fichiers)
 - `listDirectory` — Liste un dossier
 - `tree` — Vue arborescente compacte
@@ -97,28 +98,32 @@ Quatorze outils sont exposés au modèle, organisés par catégorie.
 - `gitStatus`, `gitDiff`, `gitLog` — Inspection Git
 
 ### Écriture
+
 - `writeFile` — Crée un nouveau fichier
 - `editFile` — Remplace un bloc exact unique
 - `multiEditFile` — Applique plusieurs remplacements en séquence
 
 ### Commande
+
 - `runCommand` — Exécute une commande sans shell, limitée au projet
 
 ### Planification et dialogue
+
 - `todoWrite` / `todoRead` — Gestion de la liste de tâches
 - `askUser` — Question fermée (2 à 4 options)
 
 ### Réseau
+
 - `webFetch` — Récupère le contenu textuel d'une URL (autorisation requise)
 
 ## Modes de permissions
 
-| Mode | Lecture | Écriture | Commande | Web |
-|---|---|---|---|---|
-| `default` | ✓ | prompt | prompt | prompt |
-| `accept-edits` | ✓ | ✓ | prompt | prompt |
-| `plan` | ✓ | refus | refus | refus |
-| `yolo` | ✓ | ✓ | ✓ | ✓ |
+| Mode           | Lecture | Écriture | Commande | Web    |
+| -------------- | ------- | -------- | -------- | ------ |
+| `default`      | ✓       | prompt   | prompt   | prompt |
+| `accept-edits` | ✓       | ✓        | prompt   | prompt |
+| `plan`         | ✓       | refus    | refus    | refus  |
+| `yolo`         | ✓       | ✓        | ✓        | ✓      |
 
 Quand un prompt apparaît, quatre choix sont proposés :
 
@@ -162,9 +167,7 @@ Le fichier `.moliere/hooks.json` permet d'exécuter des commandes shell avant ou
   "PreToolUse": [
     { "matcher": "editFile|writeFile", "command": "bun run lint:fix" }
   ],
-  "PostToolUse": [
-    { "matcher": "runCommand", "command": "echo done" }
-  ],
+  "PostToolUse": [{ "matcher": "runCommand", "command": "echo done" }],
   "Stop": [
     { "command": "osascript -e 'display notification \"Molière a terminé\"'" }
   ]
@@ -221,7 +224,7 @@ Les tests couvrent les fonctions pures (parse, validation, glob, walk, Markdown,
 
 ## Contribution
 
-Les contributions sont les bienvenues. Consultez [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour la mise en place, les conventions de code et le processus de pull request. Pour les questions de comportement de la communauté, voir [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md). Pour signaler une faille de sécurité, voir [`SECURITY.md`](./SECURITY.md).
+Les contributions sont les bienvenues. Consultez [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour la mise en place, les conventions de code et le processus de pull request. Les agents de code automatisés (Copilot, Cursor, Claude Code, etc.) doivent lire [`AGENTS.md`](./AGENTS.md) avant toute intervention. Pour les questions de comportement de la communauté, voir [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md). Pour signaler une faille de sécurité, voir [`SECURITY.md`](./SECURITY.md).
 
 ## Crédits
 
